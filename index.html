@@ -1,0 +1,957 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>hybrix</title>
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <style>
+    :root {
+      --font-size-min: 18;
+      --font-size-max: 45;
+      --font-ratio-min: 1.1;
+      --font-ratio-max: 1.2;
+      --font-width-min: 320;
+      --font-width-max: 1200;
+      --variable-unit: 100vw;
+
+      --color-canvas: #0a0a0a;
+      --color-canvasText: #ffffff;
+      --color-primary: #d4af37;
+      --color-primary-dark: #b8860b;
+      --color-text-dark: #a0a0a0;
+      --color-surface: #1a1a1a;
+      --color-glass: rgba(30, 30, 30, 0.7);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html, body {
+      height: 100%;
+      width: 100%;
+      font-family: 'Geist', 'Inter', sans-serif;
+      background: var(--color-canvas);
+      color: var(--color-canvasText);
+      overflow-x: hidden;
+      scroll-behavior: smooth;
+    }
+
+    .container {
+      position: relative;
+      width: 100%;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+    }
+
+    canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+    }
+
+    .glass-bg {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 2;
+      pointer-events: none;
+      backdrop-filter: blur(7px);
+      -webkit-backdrop-filter: blur(7px);
+      background: rgba(0, 0, 0, 0.3);
+    }
+
+    .gradient-separator {
+      position: absolute;
+      bottom: -60px;
+      left: 0;
+      width: 100%;
+      height: 600px;
+      background: linear-gradient(to bottom, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.6) 20%, #000 100%);
+      z-index: 3;
+      pointer-events: none;
+    }
+
+    h1 {
+      --font-level: 8;
+      position: relative;
+      z-index: 4;
+      line-height: 0.8;
+      margin: 0;
+      background: linear-gradient(
+        var(--color-canvasText) 60%,
+        color-mix(in oklch, var(--color-canvas), var(--color-canvasText))
+      );
+      background-clip: text;
+      color: transparent;
+      text-align: center;
+      text-transform: uppercase;
+      letter-spacing: -3px;
+      font-weight: 800;
+      font-family: 'Geist', 'Inter', sans-serif;
+    }
+
+    .fluido {
+      --fluid-min: calc(var(--font-size-min) * pow(var(--font-ratio-min), var(--font-level, 0)));
+      --fluid-max: calc(var(--font-size-max) * pow(var(--font-ratio-max), var(--font-level, 0)));
+      --fluid-preferred: calc(
+        (var(--fluid-max) - var(--fluid-min)) / 
+        (var(--font-width-max) - var(--font-width-min))
+      );
+      --fluid-type: clamp(
+        (var(--fluid-min) / 16) * 1rem,
+        ((var(--fluid-min) / 16) * 1rem) -
+        (((var(--fluid-preferred) * var(--font-width-min)) / 16) * 1rem) +
+        (var(--fluid-preferred) * var(--variable-unit, 100vi)),
+        (var(--fluid-max) / 16) * 1rem
+      );
+      font-size: var(--fluid-type);
+    }
+
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+
+    .chev {
+      --color: #f8f8f8;
+      --size: 30px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: absolute;
+      bottom: 60px;
+      font-size: var(--size);
+      user-select: none;
+      fill: var(--color);
+      animation: bounce 2s infinite;
+      z-index: 4;
+      cursor: pointer;
+      transition: transform 0.3s ease;
+    }
+
+    .chev:hover {
+      transform: scale(1.1);
+    }
+
+    .chev .chevron-down {
+      display: block;
+      width: var(--size);
+      height: var(--size);
+      fill: var(--color);
+    }
+
+    .features-section {
+      position: relative;
+      width: 100%;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 6rem 2rem;
+      z-index: 4;
+      background: #000;
+    }
+
+    .section-title {
+      text-align: center;
+      margin-bottom: 4rem;
+      position: relative;
+      z-index: 5;
+    }
+
+    .section-title h2 {
+      font-size: 3rem;
+      margin-bottom: 1.5rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--color-primary), #ffd700);
+      background-clip: text;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      letter-spacing: -1px;
+    }
+
+    .section-title p {
+      font-size: 1.2rem;
+      color: var(--color-text-dark);
+      max-width: 600px;
+      margin: 0 auto;
+      line-height: 1.6;
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 2.5rem;
+      max-width: 1200px;
+      width: 100%;
+      margin: 0 auto;
+      position: relative;
+      z-index: 5;
+    }
+
+    .feature-card {
+      background: linear-gradient(145deg, rgba(30, 30, 30, 0.85), rgba(10, 10, 10, 0.9));
+      padding: 2.5rem 2rem;
+      border-radius: 16px;
+      border: 1px solid rgba(212, 175, 55, 0.15);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      text-align: center;
+      transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      z-index: 1;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+    }
+
+    .feature-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(circle at center, rgba(212, 175, 55, 0.1) 0%, transparent 70%);
+      z-index: -1;
+      opacity: 0;
+      transition: opacity 0.6s ease;
+    }
+
+    .feature-card:hover {
+      transform: translateY(-15px);
+      border-color: rgba(212, 175, 55, 0.4);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+    }
+
+    .feature-card:hover::before {
+      opacity: 1;
+    }
+
+    .feature-icon {
+      margin-bottom: 1.8rem;
+      color: var(--color-primary);
+      font-size: 3.5rem;
+      position: relative;
+      display: inline-block;
+    }
+
+    .feature-icon::after {
+      content: '';
+      position: absolute;
+      bottom: -10px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 40px;
+      height: 3px;
+      background: linear-gradient(90deg, transparent, var(--color-primary), transparent);
+      border-radius: 2px;
+    }
+
+    .feature-card h3 {
+      font-size: 1.8rem;
+      margin-bottom: 1.2rem;
+      color: #fff;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+
+    .feature-card p {
+      color: var(--color-text-dark);
+      font-size: 1.1rem;
+      line-height: 1.7;
+      font-weight: 300;
+    }
+
+    .footer {
+      margin-top: 5rem;
+      text-align: center;
+      color: var(--color-text-dark);
+      font-size: 1rem;
+      position: relative;
+      z-index: 5;
+      padding: 2rem 0;
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+      width: 100%;
+      max-width: 1200px;
+    }
+
+    @media (max-width: 900px) {
+      .features-grid {
+        grid-template-columns: 1fr;
+        max-width: 600px;
+      }
+      
+      .section-title h2 {
+        font-size: 2.5rem;
+      }
+      
+      .feature-card {
+        padding: 2rem 1.5rem;
+      }
+      
+      .gradient-separator {
+        height: 400px;
+        bottom: -40px;
+      }
+    }
+
+    @media (max-width: 600px) {
+      .section-title h2 {
+        font-size: 2rem;
+      }
+      
+      .section-title p {
+        font-size: 1rem;
+      }
+      
+      .gradient-separator {
+        height: 300px;
+        bottom: -30px;
+      }
+    }
+	
+    .usecases-section {
+      position: relative;
+      width: 100%;
+      padding: 8rem 2rem;
+      background: #000; /* Fundo preto sólido */
+      z-index: 4;
+      overflow: hidden;
+    }
+
+    .carousel-container {
+      position: relative;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2rem 0;
+    }
+
+    .carousel-wrapper {
+      position: relative;
+      overflow: hidden;
+      border-radius: 24px;
+      box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+    }
+
+    .carousel-track {
+      display: flex;
+      transition: transform 0.6s cubic-bezier(0.165, 0.84, 0.44, 1);
+      height: 500px;
+    }
+
+    .carousel-slide {
+      min-width: 100%;
+      display: flex;
+      flex-direction: row;
+      gap: 3rem;
+      align-items: center;
+      padding: 3rem;
+      box-sizing: border-box;
+      background: rgba(20, 20, 20, 0.7);
+      backdrop-filter: blur(15px);
+      -webkit-backdrop-filter: blur(15px);
+      border: 1px solid rgba(212, 175, 55, 0.15);
+    }
+
+    .carousel-image {
+      flex: 1;
+      height: 100%;
+      min-height: 400px;
+      background-size: cover;
+      background-position: center;
+      border-radius: 16px;
+      overflow: hidden;
+      position: relative;
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+      transition: all 0.5s ease;
+    }
+
+    .carousel-image::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(45deg, rgba(212, 175, 55, 0.1), transparent);
+    }
+
+    .carousel-content {
+      flex: 1;
+      padding: 1.5rem;
+      background: rgba(30, 30, 30, 0.5);
+      border-radius: 16px;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid rgba(212, 175, 55, 0.1);
+      transition: all 0.5s ease;
+    }
+
+    .carousel-content h3 {
+      font-size: 2.5rem;
+      margin-bottom: 1.5rem;
+      background: linear-gradient(135deg, var(--color-primary), #ffd700);
+      background-clip: text;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      letter-spacing: -0.5px;
+    }
+
+    .carousel-content p {
+      font-size: 1.2rem;
+      color: var(--color-text-dark);
+      line-height: 1.8;
+      margin-bottom: 2rem;
+    }
+
+    .carousel-content .highlight {
+      display: inline-block;
+      padding: 0.5rem 1.5rem;
+      background: rgba(212, 175, 55, 0.15);
+      border-radius: 50px;
+      color: var(--color-primary);
+      font-weight: 600;
+      margin-top: 1rem;
+      border: 1px solid rgba(212, 175, 55, 0.2);
+    }
+
+    .carousel-nav {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-top: 2.5rem;
+      gap: 1rem;
+    }
+
+    .carousel-dots {
+      display: flex;
+      gap: 0.8rem;
+    }
+
+    .carousel-dots button {
+      width: 14px;
+      height: 14px;
+      border: none;
+      border-radius: 50%;
+      background: #333;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      position: relative;
+    }
+
+    .carousel-dots button::before {
+      content: '';
+      position: absolute;
+      top: -4px;
+      left: -4px;
+      right: -4px;
+      bottom: -4px;
+      border-radius: 50%;
+      border: 1px solid transparent;
+      transition: border-color 0.3s ease;
+    }
+
+    .carousel-dots button:hover, .carousel-dots button.active {
+      background: var(--color-primary);
+      transform: scale(1.1);
+    }
+
+    .carousel-dots button.active::before {
+      border-color: var(--color-primary);
+    }
+
+    .carousel-arrows {
+      display: flex;
+      gap: 1rem;
+    }
+
+    .carousel-arrow {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background: rgba(30, 30, 30, 0.7);
+      border: 1px solid rgba(212, 175, 55, 0.3);
+      color: var(--color-primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-size: 1.2rem;
+      backdrop-filter: blur(5px);
+      -webkit-backdrop-filter: blur(5px);
+    }
+
+    .carousel-arrow:hover {
+      background: rgba(212, 175, 55, 0.2);
+      border-color: var(--color-primary);
+      transform: scale(1.1);
+    }
+
+    .slide-counter {
+      position: absolute;
+      top: 2rem;
+      right: 2rem;
+      background: rgba(30, 30, 30, 0.7);
+      padding: 0.5rem 1.5rem;
+      border-radius: 50px;
+      font-size: 1.1rem;
+      color: var(--color-primary);
+      border: 1px solid rgba(212, 175, 55, 0.3);
+      backdrop-filter: blur(5px);
+      -webkit-backdrop-filter: blur(5px);
+      z-index: 10;
+    }
+
+    .carousel-slide:hover .carousel-image {
+      transform: scale(1.02);
+      box-shadow: 0 20px 45px rgba(0, 0, 0, 0.5);
+    }
+
+    .carousel-slide:hover .carousel-content {
+      transform: translateY(-10px);
+      border-color: rgba(212, 175, 55, 0.3);
+    }
+
+    @media (max-width: 1000px) {
+      .carousel-slide {
+        flex-direction: column;
+        padding: 2rem;
+        height: auto;
+        min-height: 600px;
+      }
+      
+      .carousel-image {
+        width: 100%;
+        min-height: 300px;
+      }
+      
+      .carousel-track {
+        height: auto;
+      }
+      
+      .carousel-content {
+        width: 100%;
+      }
+    }
+
+    @media (max-width: 600px) {
+      .carousel-content h3 {
+        font-size: 2rem;
+      }
+      
+      .carousel-content p {
+        font-size: 1rem;
+      }
+      
+      .carousel-nav {
+        flex-direction: column;
+      }
+    }
+
+    .gold-glow {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      top: 0;
+      left: 0;
+      background: radial-gradient(circle at center, rgba(212, 175, 55, 0.05) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: -1;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <canvas id="silkCanvas"></canvas>
+    <div class="glass-bg"></div>
+    <div class="gradient-separator"></div>
+    <h1 class="fluido">hybrix</h1>
+    
+    <div class="chev" id="scrollDown">
+      <svg class="chevron-down" xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 512 512">
+        <path d="M233.4 406.6c12.5 12.5 32.8 12.5 45.3 0l192-192c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L256 338.7 86.6 169.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3l192 192z"></path>
+      </svg>
+    </div>
+  </div>
+
+  <section class="features-section" id="features">
+    <div class="section-title">
+      <h2>Recursos Revolucionários</h2>
+      <p>Descubra as funcionalidades que tornam a Hybrix AI única no mercado</p>
+    </div>
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon">
+          <i class="fas fa-brain"></i>
+        </div>
+        <h3>IA Avançada</h3>
+        <p>Processamento de linguagem natural de última geração com capacidades de aprendizado profundo e contextualização avançada.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">
+          <i class="fas fa-bolt"></i>
+        </div>
+        <h3>Performance Extrema</h3>
+        <p>Otimizada para velocidade máxima com algoritmos de alta eficiência e processamento paralelo distribuído.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">
+          <i class="fas fa-shield-alt"></i>
+        </div>
+        <h3>Segurança Total</h3>
+        <p>Criptografia avançada e proteção de dados de nível empresarial com auditoria constante de vulnerabilidades.</p>
+      </div>
+    </div>
+
+    <section class="usecases-section" id="usecases">
+      <div class="gold-glow"></div>
+      <div class="section-title">
+        <h2>Onde a Hybrix Brilha</h2>
+        <p>Aplicações práticas da nossa tecnologia em setores essenciais</p>
+      </div>
+      
+      <div class="carousel-container">
+        <div class="carousel-wrapper">
+          <div class="slide-counter">1/3</div>
+          <div class="carousel-track">
+		  
+            <div class="carousel-slide">
+              <div class="carousel-image" style="background-image: url('https://images.unsplash.com/photo-1576091160550-2173dba999ef?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1170&q=80');">
+              </div>
+              <div class="carousel-content">
+                <h3>Saúde</h3>
+                <p>A Hybrix AI está revolucionando o setor de saúde com soluções inteligentes que ajudam médicos a diagnosticar doenças com precisão e rapidez.</p>
+                <p>Nossa tecnologia analisa exames de imagem, detecta padrões complexos e oferece insights valiosos para tratamentos personalizados.</p>
+                <div class="highlight">+89% de precisão em diagnósticos</div>
+              </div>
+            </div>
+
+            <div class="carousel-slide">
+              <div class="carousel-image" style="background-image: url('https://images.unsplash.com/photo-1553877522-43269d4ea984?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1170&q=80');"></div>
+              <div class="carousel-content">
+                <h3>Financeiro</h3>
+                <p>No setor financeiro, nossa IA prevê tendências de mercado, detecta fraudes em tempo real e otimiza investimentos.</p>
+                <p>Instituições financeiras líderes utilizam a Hybrix para análise de risco avançada e automação de processos complexos.</p>
+                <div class="highlight">Redução de 75% em fraudes</div>
+              </div>
+            </div>
+			
+            <div class="carousel-slide">
+              <div class="carousel-image" style="background-image: url('https://images.unsplash.com/photo-1523240795612-9a054b0db644?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1170&q=80');"></div>
+              <div class="carousel-content">
+                <h3>Educação</h3>
+                <p>Transformamos a educação com tutores virtuais inteligentes que adaptam o conteúdo ao ritmo de aprendizado de cada aluno.</p>
+                <p>Nossas soluções geram materiais didáticos personalizados, avaliam o desempenho e identificam áreas de melhoria.</p>
+                <div class="highlight">+40% de engajamento estudantil</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="carousel-nav">
+          <div class="carousel-arrows">
+            <div class="carousel-arrow" id="prevSlide">
+              <i class="fas fa-chevron-left"></i>
+            </div>
+            <div class="carousel-arrow" id="nextSlide">
+              <i class="fas fa-chevron-right"></i>
+            </div>
+          </div>
+          <div class="carousel-dots"></div>
+        </div>
+      </div>
+    </section>
+	
+<section id="cta" class="cta-section" style="background: linear-gradient(rgba(10,10,10,0.9), rgba(10,10,10,0.9)), url('https://images.unsplash.com/photo-1519681393784-d120267933ba?q=80&w=2070&auto=format&fit=crop') no-repeat center center/cover; text-align: center; padding: 4rem 2rem; border-radius: 16px; max-width: 800px; width: 100%; position: relative; overflow: hidden; border: 1px solid rgba(212, 175, 55, 0.3); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); margin: 4rem auto 0 auto;">
+  <h2 style="font-size: 2.5rem; margin-bottom: 1rem; background: linear-gradient(135deg, #d4af37, #ffd700); background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Pronto para o Futuro da IA?</h2>
+  <p style="font-size: 1.1rem; color: #a0a0a0; max-width: 600px; margin: 0 auto 2.5rem;">Baixe agora a Hybrix AI e experimente o que há de mais avançado em inteligência artificial.</p>
+  <button class="cta-button" style="display: inline-flex; align-items: center; gap: 0.75rem; padding: 1rem 2.5rem; font-size: 1.2rem; font-weight: 700; color: #0a0a0a; background: linear-gradient(135deg, #d4af37, #b8860b); border: none; border-radius: 8px; cursor: pointer; transition: all 0.3s ease; position: relative; z-index: 1; box-shadow: 0 5px 15px rgba(212, 175, 55, 0.4);">
+    <i class="fas fa-download"></i>
+    <span>Download Gratuito</span>
+  </button>
+</section>
+
+    <div class="footer">
+      <p>© 2025 Hybrix AI. Todos os direitos reservados.</p>
+    </div>
+  </section>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script>
+    function hexToNormalizedRGB(hex) {
+      hex = hex.replace("#", "");
+      return [
+        parseInt(hex.slice(0, 2), 16) / 255,
+        parseInt(hex.slice(2, 4), 16) / 255,
+        parseInt(hex.slice(4, 6), 16) / 255,
+      ];
+    }
+
+    const vertexShader = `
+      varying vec2 vUv;
+      varying vec3 vPosition;
+      void main() {
+        vPosition = position;
+        vUv = uv;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+      }
+    `;
+
+    const fragmentShader = `
+      varying vec2 vUv;
+      varying vec3 vPosition;
+      uniform float uTime;
+      uniform vec3  uColor;
+      uniform float uSpeed;
+      uniform float uScale;
+      uniform float uRotation;
+      uniform float uNoiseIntensity;
+      const float e = 2.71828182845904523536;
+
+      float noise(vec2 texCoord) {
+        float G = e;
+        vec2  r = (G * sin(G * texCoord));
+        return fract(r.x * r.y * (1.0 + texCoord.x));
+      }
+
+      vec2 rotateUvs(vec2 uv, float angle) {
+        float c = cos(angle);
+        float s = sin(angle);
+        mat2  rot = mat2(c, -s, s, c);
+        return rot * uv;
+      }
+
+      void main() {
+        float rnd        = noise(gl_FragCoord.xy);
+        vec2  uv         = rotateUvs(vUv * uScale, uRotation);
+        vec2  tex        = uv * uScale;
+        float tOffset    = uSpeed * uTime;
+
+        tex.y += 0.03 * sin(8.0 * tex.x - tOffset);
+
+        float pattern = 0.6 +
+                    0.4 * sin(5.0 * (tex.x + tex.y +
+                                 cos(3.0 * tex.x + 5.0 * tex.y) +
+                                 0.02 * tOffset) +
+                         sin(20.0 * (tex.x + tex.y - 0.1 * tOffset)));
+
+        vec4 col = vec4(uColor, 1.0) * vec4(pattern) - rnd / 15.0 * uNoiseIntensity;
+        col.a = 1.0;
+        gl_FragColor = col;
+      }
+    `;
+
+    class SilkEffect {
+      constructor(options = {}) {
+        this.options = {
+          speed: options.speed || 2,
+          scale: options.scale || 1,
+          color: options.color || "#ffffff",
+          noiseIntensity: options.noiseIntensity || 4.5,
+          rotation: options.rotation || 0
+        };
+        this.init();
+      }
+
+      init() {
+        this.scene = new THREE.Scene();
+        this.camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 10);
+        this.renderer = new THREE.WebGLRenderer({
+          canvas: document.getElementById('silkCanvas'),
+          antialias: true,
+          alpha: true
+        });
+        this.renderer.setClearColor(0x000000, 1);
+        this.camera.position.z = 1;
+
+        this.geometry = new THREE.PlaneGeometry(2, 2);
+        this.uniforms = {
+          uTime: { value: 0 },
+          uSpeed: { value: this.options.speed },
+          uScale: { value: this.options.scale },
+          uNoiseIntensity: { value: this.options.noiseIntensity },
+          uColor: { value: new THREE.Color(...hexToNormalizedRGB(this.options.color)) },
+          uRotation: { value: this.options.rotation }
+        };
+
+        this.material = new THREE.ShaderMaterial({
+          uniforms: this.uniforms,
+          vertexShader: vertexShader,
+          fragmentShader: fragmentShader,
+          transparent: true
+        });
+
+        this.mesh = new THREE.Mesh(this.geometry, this.material);
+        this.scene.add(this.mesh);
+
+        window.addEventListener('resize', this.onResize.bind(this));
+        this.onResize();
+        this.animate();
+      }
+
+      onResize() {
+        this.renderer.setSize(window.innerWidth, window.innerHeight);
+      }
+
+      animate() {
+        requestAnimationFrame(this.animate.bind(this));
+        this.uniforms.uTime.value += 0.01;
+        this.renderer.render(this.scene, this.camera);
+      }
+    }
+
+    window.addEventListener('load', () => {
+      new SilkEffect({
+        speed: 1.8,
+        scale: 1.3,
+        color: "#d4af37",
+        noiseIntensity: 4.0,
+        rotation: 0.15
+      });
+    });
+
+    document.getElementById('scrollDown').addEventListener('click', function() {
+      document.getElementById('features').scrollIntoView({ 
+        behavior: 'smooth' 
+      });
+    });
+
+    document.querySelectorAll('.feature-card').forEach(card => {
+      card.addEventListener('mouseenter', () => {
+        card.style.transform = 'translateY(-15px)';
+        card.style.boxShadow = '0 20px 40px rgba(0, 0, 0, 0.4)';
+      });
+      
+      card.addEventListener('mouseleave', () => {
+        card.style.transform = 'translateY(0)';
+        card.style.boxShadow = '0 10px 25px rgba(0, 0, 0, 0.3)';
+      });
+    });
+
+    const observerOptions = {
+      threshold: 0.1
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.style.opacity = 1;
+          entry.target.style.transform = 'translateY(0)';
+        }
+      });
+    }, observerOptions);
+
+    document.querySelectorAll('.feature-card').forEach(card => {
+      card.style.opacity = 0;
+      card.style.transform = 'translateY(30px)';
+      card.style.transition = 'opacity 0.8s ease, transform 0.8s ease';
+      observer.observe(card);
+    });
+
+    const track = document.querySelector('.carousel-track');
+    const slides = Array.from(track.children);
+    const dotsContainer = document.querySelector('.carousel-dots');
+    const prevButton = document.getElementById('prevSlide');
+    const nextButton = document.getElementById('nextSlide');
+    const slideCounter = document.querySelector('.slide-counter');
+    let currentIndex = 0;
+
+    slides.forEach((_, index) => {
+      const dot = document.createElement('button');
+      if (index === 0) dot.classList.add('active');
+      dot.addEventListener('click', () => {
+        goToSlide(index);
+      });
+      dotsContainer.appendChild(dot);
+    });
+    
+    function updateCounter() {
+      slideCounter.textContent = `${currentIndex + 1}/${slides.length}`;
+    }
+
+    function updateDots() {
+      dotsContainer.querySelectorAll('button').forEach((dot, i) => {
+        dot.classList.toggle('active', i === currentIndex);
+      });
+    }
+
+    function goToSlide(index) {
+      track.style.transform = `translateX(-${index * 100}%)`;
+      currentIndex = index;
+      updateDots();
+      updateCounter();
+
+      slides.forEach(slide => slide.classList.remove('active'));
+      slides[currentIndex].classList.add('active');
+    }
+
+    function nextSlide() {
+      const nextIndex = (currentIndex + 1) % slides.length;
+      goToSlide(nextIndex);
+    }
+    
+    function prevSlide() {
+      const prevIndex = (currentIndex - 1 + slides.length) % slides.length;
+      goToSlide(prevIndex);
+    }
+    
+    prevButton.addEventListener('click', prevSlide);
+    nextButton.addEventListener('click', nextSlide);
+   
+    setInterval(nextSlide, 7000);
+    
+    updateCounter();
+    slides[0].classList.add('active');
+	
+	    document.querySelectorAll('.tech-layer').forEach(layer => {
+      layer.addEventListener('mouseenter', () => {
+        layer.style.zIndex = '10';
+      });
+      
+      layer.addEventListener('mouseleave', () => {
+        layer.style.zIndex = '2';
+      });
+    });
+
+const ctaSection = document.querySelector('.cta-section');
+if (ctaSection) {
+  ctaSection.style.opacity = 0;
+  ctaSection.style.transform = 'translateY(30px)';
+  ctaSection.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+  setTimeout(() => {
+    ctaSection.style.opacity = 1;
+    ctaSection.style.transform = 'translateY(0)';
+  }, 500);
+
+  const ctaButton = ctaSection.querySelector('.cta-button');
+  if (ctaButton) {
+    ctaButton.addEventListener('click', () => {
+      ctaButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Preparando download...';
+      setTimeout(() => {
+        ctaButton.innerHTML = '<i class="fas fa-check"></i> Download iniciado!';
+        ctaButton.style.background = 'linear-gradient(135deg, #4CAF50, #2E7D32)';
+      }, 1500);
+    });
+  }
+}
+  </script>
+</body>
+</html>
